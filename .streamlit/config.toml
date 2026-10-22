@@ -1,0 +1,11 @@
+# Colour theme based on the Dyslexia Association of Singapore (DAS) brand:
+# crimson #E21A23, orange #F69159, brown #9A5E38.
+# A soft cream background and dark (not pure black) text reduce glare,
+# which is easier on readers with dyslexia.
+[theme]
+base = "light"
+primaryColor = "#C8151D"
+backgroundColor = "#FFF8F0"
+secondaryBackgroundColor = "#FDEBDD"
+textColor = "#2D2A26"
+font = "sans serif"
