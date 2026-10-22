@@ -1,3 +1,8 @@
+import threading
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+import requests
 import streamlit as st
 from openai import OpenAI
 
@@ -20,6 +25,30 @@ api_key = st.sidebar.text_input("OpenAI API Key", type="password", value=default
 if not api_key:
     st.info("Please add your OpenAI API Key in the sidebar to begin.", icon="🔑")
     st.stop()
+
+# Google Sheet logging (optional): URL of the Apps Script web app in google_apps_script/Code.gs
+try:
+    sheet_webhook_url = st.secrets.get("GOOGLE_SHEET_WEBHOOK_URL", "")
+except Exception:
+    sheet_webhook_url = ""
+
+def log_to_google_sheet(question, answer):
+    """Append Timestamp | User_Question | AI_Answer to the Google Sheet without blocking the chat."""
+    if not sheet_webhook_url:
+        return
+    payload = {
+        "timestamp": datetime.now(ZoneInfo("Asia/Singapore")).strftime("%Y-%m-%d %H:%M:%S"),
+        "question": question,
+        "answer": answer,
+    }
+
+    def send():
+        try:
+            requests.post(sheet_webhook_url, json=payload, timeout=15)
+        except Exception as e:
+            print(f"Google Sheet logging failed: {e}")
+
+    threading.Thread(target=send, daemon=True).start()
 
 # Initialize the OpenAI Client
 client = OpenAI(api_key=api_key)
@@ -74,6 +103,9 @@ if user_query := st.chat_input("Ask a question about the presentation..."):
             
             # Save to local session states for re-renders
             st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+
+            # Capture the Q&A in the Google Sheet
+            log_to_google_sheet(user_query, assistant_response)
             
         except Exception as e:
             response_placeholder.markdown(f"⚠️ API Error: {str(e)}")
